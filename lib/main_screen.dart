@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:music_player/extentions.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({Key? key}) : super(key: key);
@@ -12,6 +14,30 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
+
+  final AudioPlayer audioPlayer = AudioPlayer();
+  Duration? duration;
+  Timer? timer ;
+
+  @override
+  void initState() {
+    audioPlayer.setAsset('assets/music.mp3').then((value) {
+      duration = value;
+      audioPlayer.play();
+
+      timer = Timer.periodic(Duration(microseconds: 200), (timer) {
+        setState(() {
+          if(audioPlayer.position.inMilliseconds > duration!.inMilliseconds.toDouble()-100){
+            audioPlayer.seek(const Duration(milliseconds:0)) ;
+          }
+        });
+      });
+
+      setState(() {
+      });
+    });
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +56,9 @@ class _MainScreenState extends State<MainScreen> {
                 sigmaX: 30,
                 sigmaY: 30,
               ),
-              child: Container(color: Colors.black.withOpacity(0.2),),
+              child: Container(
+                color: Colors.black.withOpacity(0.2),
+              ),
             ),
           )),
           SafeArea(
@@ -63,31 +91,40 @@ class _MainScreenState extends State<MainScreen> {
                     padding: const EdgeInsets.all(32),
                     child: Image.asset('assets/cover.jpg'),
                   )),
-                  const Text('Koisk', style: TextStyle(color: Colors.white , fontWeight: FontWeight.w700) ),
+                  const Text('Koisk',
+                      style: TextStyle(
+                          color: Colors.white, fontWeight: FontWeight.w700)),
                   const SizedBox(
                     height: 4,
                   ),
-                  const Text('Eshghe Sorat', style: TextStyle(color: Colors.white)),
+                  const Text('Eshghe Sorat',
+                      style: TextStyle(color: Colors.white)),
                   const SizedBox(
                     height: 4,
                   ),
-                  Slider(
-                      value: 0.5,
+                  if(duration != null )
+                    Slider(
                       activeColor: Colors.white,
                       inactiveColor: Colors.white54,
-                      onChanged:(value){
-
-                  } ) ,
+                      max: duration!.inMilliseconds.toDouble(),
+                      value: audioPlayer.position.inMilliseconds.toDouble(),
+                      onChangeStart: (value) {
+                        audioPlayer.pause() ;
+                      },
+                        onChangeEnd: (value) {
+                          audioPlayer.play() ;
+                        },
+                      onChanged: (value) {
+                        audioPlayer.seek(Duration(milliseconds: value.toInt())) ;
+                      }),
                   const SizedBox(
                     height: 4,
                   ),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('00:00',
-                          style: TextStyle(color: Colors.white)),
-                      Text('10:54',
-                          style: TextStyle(color: Colors.white)),
+                      Text(audioPlayer.position.toMinutesSeconds(), style: TextStyle(color: Colors.white)),
+                      Text(duration != null ?audioPlayer.duration!.toMinutesSeconds() : '00:00', style: TextStyle(color: Colors.white)),
                     ],
                   ),
                   Row(
@@ -102,10 +139,16 @@ class _MainScreenState extends State<MainScreen> {
                             color: Colors.white,
                           )),
                       IconButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            if(audioPlayer.playing){
+                              audioPlayer.pause() ;
+                            }else{
+                              audioPlayer.play() ;
+                            }
+                          },
                           iconSize: 56,
                           icon: Icon(
-                            true
+                            audioPlayer.playing
                                 ? CupertinoIcons.pause_circle_fill
                                 : CupertinoIcons.play_circle_fill,
                             color: Colors.white,
@@ -128,4 +171,3 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 }
-
